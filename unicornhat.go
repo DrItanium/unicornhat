@@ -17,7 +17,7 @@ func InitHardware() {
 	C.initHardware()
 }
 
-func Initialize(numPixels int) {
+func Init(numPixels int) {
 	C.init(C.int(numPixels))
 }
 
@@ -92,3 +92,6 @@ func DefaultBrightness() float64 {
 	return float64(C.getDefaultBrightnessMacro())
 }
 
+func Shutdown(dummy int) {
+	C.shutdown(C.int(dummy))
+}
