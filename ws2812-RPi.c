@@ -69,7 +69,7 @@ static void udelay(int us) {
 
 // Shutdown functions
 // --------------------------------------------------------------------------------------------------
-void terminate(int dummy) {
+void shutdown(int dummy) {
 	// Shut down the DMA controller
 	if(dma_reg) {
 		CLRBIT(dma_reg[DMA_CS], DMA_CS_ACTIVE);
@@ -89,7 +89,10 @@ void terminate(int dummy) {
 	if(page_map != 0) {
 		free(page_map);
 	}
-
+}
+void terminate(int dummy) {
+	// make it so that we don't pull the rug out from underneath go
+	shutdown(dummy);
 	exit(1);
 }
 

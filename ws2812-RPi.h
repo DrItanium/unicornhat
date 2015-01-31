@@ -378,6 +378,8 @@ static struct control_data_s *ctl;
 void printBinary(unsigned int i, unsigned int bits);
 unsigned int reverseWord(unsigned int word);
 //void udelay(int us);
+void shutdown(int dummy);
+// shutdown + exit, should we use the dummy as the exit code?
 void terminate(int dummy);
 void fatal(char *fmt, ...);
 unsigned int mem_virt_to_phys(void *virt);
