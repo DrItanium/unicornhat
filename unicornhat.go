@@ -128,3 +128,27 @@ func SetNumLEDs(count uint) {
 func GetNumLEDs() uint {
 	return uint(C.numLEDs)
 }
+
+func EffectWheel(wheelPos uint8) *Pixel {
+	return fromNativePixel(C.Wheel(C.uint8_t(wheelPos)))
+}
+
+func EffectColorWipe(c *Pixel, wait uint8) {
+	C.colorWipe(c.nativePixel(), C.uint8_t(wait))
+}
+
+func EffectRainbow(wait uint8) {
+	C.rainbow(C.uint8_t(wait))
+}
+
+func EffectRainbowCycle(wait uint8) {
+	C.rainbowCycle(C.uint8_t(wait))
+}
+
+func EffectTheaterChase(p *Pixel, wait uint8) {
+	C.theaterChase(p.nativePixel(), C.uint8_t(wait))
+}
+
+func EffectTheaterChaseRainbow(wait uint8) {
+	C.theaterChaseRainbow(C.uint8_t(wait))
+}
