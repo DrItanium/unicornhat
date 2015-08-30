@@ -1,107 +1,76 @@
 // Interface functions with the pimoroni UnicornHat
 package unicornhat
 
-//#include "ws2812-RPi.h"
+//#include "ws2811.h"
+//#include "board_info.h"
 //
-//double getDefaultBrightnessMacro() {
-//	return DEFAULT_BRIGHTNESS;
+//int getTargetFreq() {
+//	return WS2811_TARGET_FREQ;
+//}
+//ws2811_t ledstring =
+//{
+//	.freq = WS2811_TARGET_FREQ,
+//	.dmanum = 5,
+//	.channel =
+//	{
+//		[0] =
+//		{
+//			.gpionum = 18,
+//			.count = (8 * 8),
+//			.invert = 0,
+//			.brightness = 55,
+//		}
+//	}
+//};
+//void setBrightness(int b) {
+//	ledstring.channel[0].brightness = b;
+//}
+//int getBrightness(void) {
+// return ledstring.channel[0].brightness;
+//}
+//void setPixelColorRGB(int pixel, int r, int g, int b) {
+// ledstring.channel[0].leds[pixel] = (r << 16) | (g << 8) | b;
+//}
+//
+//void clearLEDBuffer(void) {
+//	int i;
+//	for (i = 0; i < 64; i++) {
+//		setPixelColorRGB(i, 0, 0, 0);
+//	}
+//}
+//void show(void) {
+// ws2811_render(&ledstring);
+//}
+//int initializeUnicornhat(void) {
+//	if (board_info_init() < 0) {
+//		return 0;
+//	}
+//	if (ws2811_init(&ledstring)) {
+//		return 0;
+//	}
+//
+//	clearLEDBuffer();
+//	return 1;
+//}
+//void shutdownUnicornhat(void) {
+//	clearLEDBuffer();
+// ws2811_render(&ledstring);
+// ws2811_fini(&ledstring);
+//}
+//ws2811_led_t getPixel(int index) {
+//	return ledstring.channel[0].leds[index];
 //}
 import "C"
+import "fmt"
 
-type Pixel struct {
-	R, G, B byte
-}
+const (
+	Width             = 8
+	Height            = 8
+	PixelCount        = Width * Height
+	DefaultBrightness = 55
+)
 
-// initialization of hardware
-func InitHardware() {
-	C.initHardware()
-}
-
-func Init(numPixels int) {
-	C.init(C.int(numPixels))
-}
-
-func Initialize(numPixels uint, brightness float64) {
-	SetNumLEDs(numPixels)
-	SetBrightness(brightness)
-	C.initHardware()
-}
-
-func StartTransfer() {
-	C.startTransfer()
-}
-
-// Led updates
-func Show() {
-	C.show()
-}
-
-func GetBrightness() float64 {
-	return float64(C.getBrightness())
-}
-func SetBrightness(brightness float64) bool {
-	return (C.setBrightness(C.double(brightness)) == 1)
-}
-
-func ClearPWMBuffer() {
-	C.clearPWMBuffer()
-}
-
-func Clear() {
-	C.clear()
-}
-
-func ClearLEDBuffer() {
-	C.clearLEDBuffer()
-}
-
-func GetPixelColor(pixel uint) *Pixel {
-	return fromNativePixel(C.getPixelColor(C.uint(pixel)))
-}
-func NewPixel(r, g, b byte) *Pixel {
-	return &Pixel{R: r, G: g, B: b}
-
-}
-func Color(r, g, b byte) *Pixel {
-	return fromNativePixel(C.Color(C.uchar(r), C.uchar(g), C.uchar(b)))
-}
-func RGB2Color(r, g, b byte) *Pixel {
-	return fromNativePixel(C.RGB2Color(C.uchar(r), C.uchar(g), C.uchar(b)))
-}
-
-func (this *Pixel) nativePixel() C.Color_t {
-	var v C.Color_t
-	v.r = C.uchar(this.R)
-	v.g = C.uchar(this.G)
-	v.b = C.uchar(this.B)
-	return v
-}
-
-func fromNativePixel(pixel C.Color_t) *Pixel {
-	return NewPixel(byte(pixel.r), byte(pixel.g), byte(pixel.b))
-}
-
-func NumPixels() uint {
-	return uint(C.numPixels())
-}
-
-func SetPixelColor(pixel uint, r, g, b byte) bool {
-	return (C.setPixelColor(C.uint(pixel), C.uchar(r), C.uchar(g), C.uchar(b)) == 1)
-}
-
-func SetPixelColorType(pixel uint, color *Pixel) bool {
-	return (C.setPixelColorT(C.uint(pixel), color.nativePixel()) == 1)
-}
-
-func DefaultBrightness() float64 {
-	return float64(C.getDefaultBrightnessMacro())
-}
-
-func Shutdown(dummy int) {
-	C.shutdown(C.int(dummy))
-}
-
-var coordinates [8][8]int = [8][8]int{
+var pixelPos = [][]int{
 	{7, 6, 5, 4, 3, 2, 1, 0},
 	{8, 9, 10, 11, 12, 13, 14, 15},
 	{23, 22, 21, 20, 19, 18, 17, 16},
@@ -112,21 +81,62 @@ var coordinates [8][8]int = [8][8]int{
 	{56, 57, 58, 59, 60, 61, 62, 63},
 }
 
-// taken from unicorn.c
-func CoordinateToPosition(x, y int) int {
-	return coordinates[x][y]
-}
-
-func SetNumLEDs(count uint) {
-	// since this is for the unicorn hat, I'm going to silently change this to 64
-	if count > 64 {
-		C.numLEDs = C.uint(64)
+func PixelPosition(x, y int) (int, error) {
+	if x > Width || x < 0 {
+		return 0, fmt.Errorf("X coordinate is out of range (%d)", x)
+	} else if y > Height || y < 0 {
+		return 0, fmt.Errorf("Y coordinate is out of range (%d)", y)
 	} else {
-		C.numLEDs = C.uint(count)
+		return pixelPos[x][y], nil
 	}
 }
-func GetNumLEDs() uint {
-	return uint(C.numLEDs)
+
+type Pixel struct {
+	R, G, B byte
+}
+
+func NewPixel(r, g, b byte) *Pixel {
+	return &Pixel{R: r, G: g, B: b}
+}
+
+// initialization of hardware
+func Initialize() error {
+	if result := C.initializeUnicornhat(); result != 1 {
+		return fmt.Errorf("Couldn't initalize the unicornhat!")
+	} else {
+		return nil
+	}
+}
+func Shutdown() {
+	C.shutdownUnicornhat()
+}
+
+// Led updates
+func Show() {
+	C.show()
+}
+
+func GetBrightness() byte {
+	return byte(C.getBrightness())
+}
+func SetBrightness(brightness byte) {
+	C.setBrightness(C.int(brightness))
+}
+
+func ClearLEDBuffer() {
+	for i := 0; i < PixelCount; i++ {
+		C.setPixelColorRGB(C.int(i), 0, 0, 0)
+	}
+}
+
+func GetPixelColor(pixel int) *Pixel {
+	var color C.ws2811_led_t
+	color = C.getPixel(C.int(pixel))
+	return NewPixel(byte((color&0x00FF0000)>>16), byte((color&0x0000FF00)>>8), byte(color&0x000000FF))
+}
+
+func SetPixelColor(pixel int, r, g, b byte) {
+	C.setPixelColorRGB(C.int(pixel), C.int(r), C.int(g), C.int(b))
 }
 
 func EffectWheel(wheelPos uint8) *Pixel {
