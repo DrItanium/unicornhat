@@ -57,10 +57,11 @@ package unicornhat
 // ws2811_render(&ledstring);
 // ws2811_fini(&ledstring);
 //}
-//int getPixel(int index) {
+//ws2811_led_t getPixel(int index) {
 //	return ledstring.channel[0].leds[index];
 //}
 import "C"
+import "fmt"
 
 const (
 	Width             = 8
@@ -86,7 +87,7 @@ func PixelPosition(x, y int) (int, error) {
 	} else if y > Height || y < 0 {
 		return 0, fmt.Errorf("Y coordinate is out of range (%d)", y)
 	} else {
-		return pixelPos[x][y]
+		return pixelPos[x][y], nil
 	}
 }
 
@@ -119,21 +120,21 @@ func GetBrightness() byte {
 	return byte(C.getBrightness())
 }
 func SetBrightness(brightness byte) {
-	C.setBrightness(int(brightness))
+	C.setBrightness(C.int(brightness))
 }
 
 func ClearLEDBuffer() {
 	for i := 0; i < PixelCount; i++ {
-		C.setPixelColorRGB(i, 0, 0, 0)
+		C.setPixelColorRGB(C.int(i), 0, 0, 0)
 	}
 }
 
-func GetPixelColor(pixel uint) *Pixel {
+func GetPixelColor(pixel int) *Pixel {
 	var color C.ws2811_led_t
-	color = C.getPixel(pixel)
+	color = C.getPixel(C.int(pixel))
 	return NewPixel(byte((color&0x00FF0000)>>16), byte((color&0x0000FF00)>>8), byte(color&0x000000FF))
 }
 
-func SetPixelColor(pixel uint, r, g, b byte) {
-	C.setPixelColorRGB(C.uint(pixel), C.uchar(r), C.uchar(g), C.uchar(b))
+func SetPixelColor(pixel int, r, g, b byte) {
+	C.setPixelColorRGB(C.int(pixel), C.int(r), C.int(g), C.int(b))
 }
